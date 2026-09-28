@@ -281,8 +281,21 @@ def ema_update(target_params: dict, encoder_params: dict, tau: float = 0.99) -> 
             new_params[key] = tau * target_params[key] + (1.0 - tau) * encoder_params[key]
     return new_params
 
-# Step 12 - encode_batch (not yet solved)
-# TODO: implement
+# Step 12 - encode_batch
+import torch
+
+def encode_batch(obs: torch.Tensor, encoder_params: dict) -> torch.Tensor:
+    """
+    Batch-encode observations into latent embeddings.
+
+    Args:
+        obs: (B, C, H, W) float tensor of pixel observations
+        encoder_params: dict with conv1_w, conv1_b, conv2_w, conv2_b, fc_w, fc_b
+
+    Returns:
+        (B, latent_dim) embeddings, with gradients flowing through the params.
+    """
+    return encoder_forward(obs, encoder_params)
 
 # Step 13 - init_predictor_params (not yet solved)
 # TODO: implement
