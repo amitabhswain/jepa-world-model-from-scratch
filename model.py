@@ -796,7 +796,11 @@ def probe_state_recovery(dataset: dict, encoder_params: dict, probe_params: dict
     if probe_params is None:
         probe_params = init_linear_probe(latent_dim=D, state_dim=state_dim, seed=0)
 
-    trained_probe = train_linear_probe(embeddings, states, probe_params, num_steps=num_probe_steps)
+    # probe_params['w'] is (state_dim, latent_dim); train_linear_probe expects
+    # (latent_dim, state_dim), so transpose going in and coming back out.
+    transposed_in = {'w': probe_params['w'].T.contiguous(), 'b': probe_params['b']}
+    trained = train_linear_probe(embeddings, states, transposed_in, num_steps=num_probe_steps)
+    trained_probe = {'w': trained['w'].T.contiguous(), 'b': trained['b']}
 
     w = trained_probe['w']
     b = trained_probe['b']
