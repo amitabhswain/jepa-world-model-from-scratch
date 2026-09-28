@@ -659,8 +659,63 @@ def rollout_latent_dynamics(initial_embedding: torch.Tensor, actions: torch.Tens
 
     return traj
 
-# Step 26 - multi_step_prediction_error (not yet solved)
-# TODO: implement
+# Step 26 - multi_step_prediction_error
+import torch
+
+def multi_step_prediction_error(dataset: dict, encoder_params: dict, target_params: dict, predictor_params: dict, horizon: int = 5, num_samples: int = 32) -> float:
+    """
+    Multi-step latent dynamics accuracy: mean MSE between rolled-out latent
+    predictions and target-encoded true future observations.
+
+    Args:
+        dataset: dict with 'observations' (N,C,H,W), 'actions' (N,), 'next_observations' (N,C,H,W)
+        encoder_params: online encoder params
+        target_params: EMA target encoder params
+        predictor_params: predictor params
+        horizon: number of steps to roll forward
+        num_samples: number of trajectory windows to evaluate
+
+    Returns:
+        Python float: mean squared error over all sampled trajectories and time steps.
+    """
+    obs_all = dataset['observations']
+    action_all = dataset['actions']
+    next_obs_all = dataset['next_observations']
+
+    N = obs_all.shape[0]
+    n = min(num_samples, N - horizon)
+
+    with torch.no_grad():
+        # Start observation for each of the n windows: obs at index i.
+        start_obs = obs_all[:n]                       # (n, C, H, W)
+
+        # Action sequence of length `horizon` for each window: actions[i : i+horizon].
+        action_seqs = torch.stack(
+            [action_all[i:i + horizon] for i in range(n)], dim=0
+        )  # (n, horizon)
+
+        # True future observations for each window: next_obs[i : i+horizon].
+        future_obs = torch.stack(
+            [next_obs_all[i:i + horizon] for i in range(n)], dim=0
+        )  # (n, horizon, C, H, W)
+
+        # Encode starting observations with the online encoder.
+        z0 = encode_batch(start_obs, encoder_params)   # (n, D)
+
+        # Roll the predictor forward.
+        pred_traj = rollout_latent_dynamics(z0, action_seqs, predictor_params)  # (horizon+1, n, D)
+        pred_future = pred_traj[1:]                     # (horizon, n, D)
+
+        # Encode true future observations with the target encoder.
+        C, H, W = future_obs.shape[2], future_obs.shape[3], future_obs.shape[4]
+        flat_future_obs = future_obs.reshape(n * horizon, C, H, W)
+        flat_true = encode_batch(flat_future_obs, target_params)  # (n*horizon, D)
+        D = flat_true.shape[-1]
+        true_future = flat_true.reshape(n, horizon, D).permute(1, 0, 2)  # (horizon, n, D)
+
+        mse = torch.mean((pred_future - true_future) ** 2)
+
+    return mse.item()
 
 # Step 27 - init_linear_probe (not yet solved)
 # TODO: implement
