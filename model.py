@@ -167,8 +167,25 @@ def collect_random_transitions(num_transitions: int, room_size: int = 8, seed: i
         'next_states': next_states,
     }
 
-# Step 7 - build_transition_dataset (not yet solved)
-# TODO: implement
+# Step 7 - build_transition_dataset
+def build_transition_dataset(num_transitions: int = 512, room_size: int = 8, seed: int = 0) -> dict:
+    """
+    Build a JEPA training-ready transition dataset from random rollouts.
+
+    Args:
+        num_transitions: number of transitions N (default 512)
+        room_size: side length of the square room (default 8)
+        seed: RNG seed for reproducibility (default 0)
+
+    Returns:
+        dict with 'observations' (N, 1, H, W), 'actions' (N,) long,
+        'next_observations' (N, 1, H, W), 'states' (N, 2), 'next_states' (N, 2).
+    """
+    return collect_random_transitions(
+        num_transitions=num_transitions,
+        room_size=room_size,
+        seed=seed,
+    )
 
 # Step 8 - init_encoder_params (not yet solved)
 # TODO: implement
