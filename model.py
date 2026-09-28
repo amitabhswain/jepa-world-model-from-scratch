@@ -118,8 +118,54 @@ def env_step(state: torch.Tensor, action: int, room_size: int = 8) -> tuple[torc
     next_obs = render_observation(next_state, room_size=room_size)
     return next_state, next_obs
 
-# Step 6 - collect_random_transitions (not yet solved)
-# TODO: implement
+# Step 6 - collect_random_transitions
+import torch
+
+def collect_random_transitions(num_transitions: int, room_size: int = 8, seed: int = 0) -> dict:
+    """
+    Collect (obs, action, next_obs, state, next_state) transitions by rolling
+    out random actions in the 2D room, as one continuous trajectory.
+
+    Args:
+        num_transitions: number of transitions N to collect
+        room_size: side length of the square room
+        seed: RNG seed for reproducibility
+
+    Returns:
+        dict with 'observations' (N, 1, H, W), 'actions' (N,) long,
+        'next_observations' (N, 1, H, W), 'states' (N, 2), 'next_states' (N, 2).
+    """
+    torch.manual_seed(seed)
+
+    state, obs = env_reset(room_size=room_size, seed=seed)
+
+    N = num_transitions
+    observations = torch.zeros(N, 1, room_size, room_size, dtype=torch.float32)
+    next_observations = torch.zeros(N, 1, room_size, room_size, dtype=torch.float32)
+    actions = torch.zeros(N, dtype=torch.long)
+    states = torch.zeros(N, 2, dtype=torch.float32)
+    next_states = torch.zeros(N, 2, dtype=torch.float32)
+
+    for i in range(N):
+        action = int(torch.randint(0, 4, ()).item())
+
+        next_state, next_obs = env_step(state, action, room_size=room_size)
+
+        observations[i] = obs
+        actions[i] = action
+        next_observations[i] = next_obs
+        states[i] = state
+        next_states[i] = next_state
+
+        state, obs = next_state, next_obs
+
+    return {
+        'observations': observations,
+        'actions': actions,
+        'next_observations': next_observations,
+        'states': states,
+        'next_states': next_states,
+    }
 
 # Step 7 - build_transition_dataset (not yet solved)
 # TODO: implement
