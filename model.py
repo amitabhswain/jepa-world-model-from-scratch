@@ -902,8 +902,22 @@ def score_action_sequences(start_embedding, action_sequences, goal_embedding, pr
 
     return total_costs
 
-# Step 34 - select_best_plan (not yet solved)
-# TODO: implement
+# Step 34 - select_best_plan
+import torch
+
+def select_best_plan(action_sequences, costs):
+    """
+    Select the action sequence with the lowest cost from a batch of candidates.
+
+    Args:
+        action_sequences: (N, H) candidate action plans
+        costs: (N,) cost per candidate
+
+    Returns:
+        (H,) the winning action sequence, same dtype as action_sequences.
+    """
+    best_idx = torch.argmin(costs)
+    return action_sequences[best_idx]
 
 # Step 35 - mpc_step (not yet solved)
 # TODO: implement
