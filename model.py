@@ -425,8 +425,28 @@ def variance_loss(embeddings: torch.Tensor, gamma: float = 1.0, eps: float = 1e-
     hinge = torch.relu(gamma - std)      # (D,)
     return hinge.mean()
 
-# Step 19 - covariance_loss (not yet solved)
-# TODO: implement
+# Step 19 - covariance_loss
+import torch
+
+def covariance_loss(embeddings: torch.Tensor) -> torch.Tensor:
+    """
+    VICReg covariance loss: penalize off-diagonal correlations between
+    latent dimensions to encourage non-redundant, decorrelated features.
+
+    Args:
+        embeddings: (B, D) batch of latent embeddings
+
+    Returns:
+        0-d scalar tensor: sum of squared off-diagonal covariance entries, divided by D.
+    """
+    B, D = embeddings.shape
+
+    z = embeddings - embeddings.mean(dim=0, keepdim=True)
+    cov = (z.T @ z) / (B - 1)
+
+    off_diag_sq_sum = cov.pow(2).sum() - cov.diagonal().pow(2).sum()
+
+    return off_diag_sq_sum / D
 
 # Step 20 - vicreg_regularizer (not yet solved)
 # TODO: implement
