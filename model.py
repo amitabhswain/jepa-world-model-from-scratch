@@ -945,8 +945,66 @@ def mpc_step(start_embedding, goal_embedding, predictor_params, n_sequences, hor
 
     return int(best_plan[0].item())
 
-# Step 36 - run_mpc_episode (not yet solved)
-# TODO: implement
+# Step 36 - run_mpc_episode
+import torch
+import math
+
+def run_mpc_episode(encoder_params, predictor_params, goal_pos, room_size, agent_size, max_steps, n_sequences, horizon, n_actions):
+    """
+    Run a closed-loop random-shooting MPC episode toward a goal position.
+
+    Args:
+        encoder_params: encoder parameter dict
+        predictor_params: predictor parameter dict
+        goal_pos: 2-tuple or length-2 tensor, the goal (x, y) position
+        room_size: side length of the square room
+        agent_size: accepted for API compatibility, unused
+        max_steps: maximum number of environment steps
+        n_sequences: number of candidate plans per MPC step
+        horizon: planning horizon per MPC step
+        n_actions: number of discrete actions
+
+    Returns:
+        dict with 'success' (bool), 'steps' (int), 'trajectory' (list of (x, y) tuples),
+        'final_distance' (float).
+    """
+    goal_tensor = torch.as_tensor(goal_pos, dtype=torch.float32)
+    goal_embedding = encode_goal(goal_tensor, encoder_params, room_size=room_size)
+
+    state, obs = env_reset(room_size=room_size)
+
+    trajectory = [(int(state[0].item()), int(state[1].item()))]
+
+    def at_goal(s):
+        return int(s[0].item()) == int(goal_tensor[0].item()) and int(s[1].item()) == int(goal_tensor[1].item())
+
+    success = at_goal(state)
+    steps = 0
+
+    if not success:
+        for _ in range(max_steps):
+            with torch.no_grad():
+                start_embedding = encode_batch(obs.unsqueeze(0), encoder_params).squeeze(0)
+
+            action = mpc_step(start_embedding, goal_embedding, predictor_params,
+                              n_sequences, horizon, n_actions)
+
+            state, obs = env_step(state, action, room_size=room_size)
+            steps += 1
+            trajectory.append((int(state[0].item()), int(state[1].item())))
+
+            if at_goal(state):
+                success = True
+                break
+
+    final_distance = float(torch.sqrt(((state.float() - goal_tensor.float()) ** 2).sum()).item())
+
+    return {
+        'success': success,
+        'steps': steps,
+        'trajectory': trajectory,
+        'final_distance': final_distance,
+    }
 
 # Step 37 - evaluate_planner (not yet solved)
 # TODO: implement
