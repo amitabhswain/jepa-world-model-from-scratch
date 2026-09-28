@@ -370,8 +370,23 @@ def predictor_forward(embeddings: torch.Tensor, actions: torch.Tensor, predictor
 
     return out
 
-# Step 16 - predict_next_embedding (not yet solved)
-# TODO: implement
+# Step 16 - predict_next_embedding
+import torch
+
+def predict_next_embedding(embeddings: torch.Tensor, actions: torch.Tensor, predictor_params: dict) -> torch.Tensor:
+    """
+    Public dynamics interface: predict the next latent embedding from the
+    current embedding and a discrete action, entirely in latent space.
+
+    Args:
+        embeddings: (B, latent_dim) current embeddings
+        actions: (B,) long tensor of discrete action indices
+        predictor_params: dict with action_embed_w, fc1_w, fc1_b, fc2_w, fc2_b
+
+    Returns:
+        (B, latent_dim) predicted next embeddings.
+    """
+    return predictor_forward(embeddings, actions, predictor_params)
 
 # Step 17 - prediction_loss (not yet solved)
 # TODO: implement
