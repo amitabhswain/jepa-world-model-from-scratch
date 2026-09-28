@@ -404,8 +404,26 @@ def prediction_loss(predicted: torch.Tensor, target: torch.Tensor) -> torch.Tens
     """
     return ((predicted - target) ** 2).mean()
 
-# Step 18 - variance_loss (not yet solved)
-# TODO: implement
+# Step 18 - variance_loss
+import torch
+
+def variance_loss(embeddings: torch.Tensor, gamma: float = 1.0, eps: float = 1e-4) -> torch.Tensor:
+    """
+    VICReg variance hinge loss: penalize latent dimensions whose per-batch
+    std falls below gamma, to prevent representation collapse.
+
+    Args:
+        embeddings: (B, D) batch of latent embeddings
+        gamma: target std floor (default 1.0)
+        eps: numerical stability constant, added inside the sqrt
+
+    Returns:
+        0-d scalar tensor: mean ReLU hinge over the D dimensions.
+    """
+    var = embeddings.var(dim=0)          # (D,), unbiased
+    std = torch.sqrt(var + eps)          # (D,)
+    hinge = torch.relu(gamma - std)      # (D,)
+    return hinge.mean()
 
 # Step 19 - covariance_loss (not yet solved)
 # TODO: implement
