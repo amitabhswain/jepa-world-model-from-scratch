@@ -494,8 +494,21 @@ def jepa_loss(predicted: torch.Tensor, target: torch.Tensor, online_embeddings: 
 
     return pred_weight * pred_loss + reg
 
-# Step 22 - collapse_metric (not yet solved)
-# TODO: implement
+# Step 22 - collapse_metric
+import torch
+
+def collapse_metric(embeddings: torch.Tensor) -> torch.Tensor:
+    """
+    Diagnostic metric for representation collapse: the mean of per-dimension
+    standard deviations across the batch.
+
+    Args:
+        embeddings: (B, D) batch of latent embeddings
+
+    Returns:
+        0-d scalar tensor: mean over D of std(embeddings[:, d]) (unbiased, dim=0).
+    """
+    return embeddings.std(dim=0).mean()
 
 # Step 23 - jepa_training_step (not yet solved)
 # TODO: implement
