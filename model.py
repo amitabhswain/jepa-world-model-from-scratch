@@ -327,8 +327,21 @@ def init_predictor_params(latent_dim: int = 32, action_dim: int = 4, hidden_dim:
 
     return params
 
-# Step 14 - embed_action (not yet solved)
-# TODO: implement
+# Step 14 - embed_action
+import torch
+
+def embed_action(actions: torch.Tensor, predictor_params: dict) -> torch.Tensor:
+    """
+    Embed discrete actions into continuous vectors via a learned table.
+
+    Args:
+        actions: (B,) long tensor of action indices in [0, action_dim)
+        predictor_params: dict containing 'action_embed_w' of shape (action_dim, emb_dim)
+
+    Returns:
+        (B, emb_dim) float tensor of action embeddings.
+    """
+    return predictor_params['action_embed_w'][actions]
 
 # Step 15 - predictor_forward (not yet solved)
 # TODO: implement
