@@ -297,8 +297,35 @@ def encode_batch(obs: torch.Tensor, encoder_params: dict) -> torch.Tensor:
     """
     return encoder_forward(obs, encoder_params)
 
-# Step 13 - init_predictor_params (not yet solved)
-# TODO: implement
+# Step 13 - init_predictor_params
+import torch
+
+def init_predictor_params(latent_dim: int = 32, action_dim: int = 4, hidden_dim: int = 64, seed: int = 0) -> dict:
+    """
+    Initialize parameters of the action-conditioned MLP predictor.
+
+    Args:
+        latent_dim: size of the latent embedding
+        action_dim: number of discrete actions
+        hidden_dim: hidden width of the MLP
+        seed: RNG seed
+
+    Returns:
+        dict with 'action_embed_w' (action_dim, latent_dim),
+        'fc1_w' (hidden_dim, 2*latent_dim), 'fc1_b' (hidden_dim,),
+        'fc2_w' (latent_dim, hidden_dim), 'fc2_b' (latent_dim,).
+        All are leaf tensors with requires_grad=True.
+    """
+    torch.manual_seed(seed)
+
+    params = {}
+    params['action_embed_w'] = (torch.randn(action_dim, latent_dim) * 0.02).requires_grad_(True)
+    params['fc1_w'] = (torch.randn(hidden_dim, 2 * latent_dim) * 0.02).requires_grad_(True)
+    params['fc1_b'] = torch.zeros(hidden_dim, requires_grad=True)
+    params['fc2_w'] = (torch.randn(latent_dim, hidden_dim) * 0.02).requires_grad_(True)
+    params['fc2_b'] = torch.zeros(latent_dim, requires_grad=True)
+
+    return params
 
 # Step 14 - embed_action (not yet solved)
 # TODO: implement
