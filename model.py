@@ -739,8 +739,43 @@ def init_linear_probe(latent_dim: int = 32, state_dim: int = 2, seed: int = 0) -
 
     return {'w': w, 'b': b}
 
-# Step 28 - train_linear_probe (not yet solved)
-# TODO: implement
+# Step 28 - train_linear_probe
+import torch
+
+def train_linear_probe(embeddings: torch.Tensor, states: torch.Tensor, probe_params: dict, num_steps: int = 100, lr: float = 1e-2) -> dict:
+    """
+    Fit a linear probe via full-batch gradient descent on frozen embeddings.
+
+    Args:
+        embeddings: (N, latent_dim) frozen embeddings (not trained)
+        states: (N, state_dim) true agent states
+        probe_params: dict with 'w' (latent_dim, state_dim), 'b' (state_dim,)
+        num_steps: number of gradient descent steps
+        lr: learning rate
+
+    Returns:
+        dict with updated 'w' and 'b', detached leaf tensors.
+    """
+    embeddings = embeddings.detach()
+    states = states.detach()
+
+    w = probe_params['w'].clone().detach().requires_grad_(True)
+    b = probe_params['b'].clone().detach().requires_grad_(True)
+
+    for _ in range(num_steps):
+        pred = embeddings @ w + b
+        loss = torch.mean((pred - states) ** 2)
+
+        loss.backward()
+
+        with torch.no_grad():
+            w -= lr * w.grad
+            b -= lr * b.grad
+
+        w.grad = None
+        b.grad = None
+
+    return {'w': w.detach().clone(), 'b': b.detach().clone()}
 
 # Step 29 - probe_state_recovery (not yet solved)
 # TODO: implement
