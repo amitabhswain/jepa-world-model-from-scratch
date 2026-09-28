@@ -749,7 +749,7 @@ def train_linear_probe(embeddings: torch.Tensor, states: torch.Tensor, probe_par
     Args:
         embeddings: (N, latent_dim) frozen embeddings (not trained)
         states: (N, state_dim) true agent states
-        probe_params: dict with 'w' (state_dim, latent_dim), 'b' (state_dim,)
+        probe_params: dict with 'w' (latent_dim, state_dim), 'b' (state_dim,)
         num_steps: number of gradient descent steps
         lr: learning rate
 
@@ -763,7 +763,7 @@ def train_linear_probe(embeddings: torch.Tensor, states: torch.Tensor, probe_par
     b = probe_params['b'].clone().detach().requires_grad_(True)
 
     for _ in range(num_steps):
-        pred = embeddings @ w.T + b
+        pred = embeddings @ w + b
         loss = torch.mean((pred - states) ** 2)
 
         loss.backward()
