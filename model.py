@@ -259,8 +259,27 @@ def init_target_encoder(encoder_params: dict) -> dict:
     """
     return {k: v.detach().clone() for k, v in encoder_params.items()}
 
-# Step 11 - ema_update (not yet solved)
-# TODO: implement
+# Step 11 - ema_update
+import torch
+
+def ema_update(target_params: dict, encoder_params: dict, tau: float = 0.99) -> dict:
+    """
+    Refresh the target encoder params as an EMA of the online encoder params.
+
+    Args:
+        target_params: dict of target tensors (not modified)
+        encoder_params: dict of online tensors with the same keys (not modified)
+        tau: decay in (0, 1]; higher means the target moves more slowly
+
+    Returns:
+        New dict where each value is tau * target + (1 - tau) * online,
+        with no gradient tracking.
+    """
+    new_params = {}
+    with torch.no_grad():
+        for key in target_params:
+            new_params[key] = tau * target_params[key] + (1.0 - tau) * encoder_params[key]
+    return new_params
 
 # Step 12 - encode_batch (not yet solved)
 # TODO: implement
