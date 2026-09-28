@@ -855,8 +855,22 @@ def latent_cost(latents, goal_embedding):
     """
     return ((latents - goal_embedding) ** 2).sum(dim=-1)
 
-# Step 32 - sample_action_sequences (not yet solved)
-# TODO: implement
+# Step 32 - sample_action_sequences
+import torch
+
+def sample_action_sequences(n_sequences, horizon, n_actions):
+    """
+    Sample random discrete action sequences for random-shooting MPC.
+
+    Args:
+        n_sequences: number of candidate action plans
+        horizon: length of each plan
+        n_actions: number of discrete actions (values drawn from [0, n_actions))
+
+    Returns:
+        (n_sequences, horizon) torch.int64 tensor of action indices.
+    """
+    return torch.randint(0, n_actions, (n_sequences, horizon))
 
 # Step 33 - score_action_sequences (not yet solved)
 # TODO: implement
