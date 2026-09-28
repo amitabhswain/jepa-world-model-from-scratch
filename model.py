@@ -448,8 +448,27 @@ def covariance_loss(embeddings: torch.Tensor) -> torch.Tensor:
 
     return off_diag_sq_sum / D
 
-# Step 20 - vicreg_regularizer (not yet solved)
-# TODO: implement
+# Step 20 - vicreg_regularizer
+import torch
+
+def vicreg_regularizer(embeddings: torch.Tensor, var_weight: float = 1.0, cov_weight: float = 0.04, gamma: float = 1.0) -> torch.Tensor:
+    """
+    Combine the VICReg variance and covariance terms into a single
+    anti-collapse regularizer on a batch of embeddings.
+
+    Args:
+        embeddings: (B, D) batch of online embeddings
+        var_weight: weight on the variance hinge term (default 1.0)
+        cov_weight: weight on the covariance term (default 0.04)
+        gamma: variance hinge threshold, forwarded to variance_loss (default 1.0)
+
+    Returns:
+        0-d scalar tensor: var_weight * variance_loss + cov_weight * covariance_loss.
+    """
+    var_term = variance_loss(embeddings, gamma=gamma)
+    cov_term = covariance_loss(embeddings)
+
+    return var_weight * var_term + cov_weight * cov_term
 
 # Step 21 - jepa_loss (not yet solved)
 # TODO: implement
