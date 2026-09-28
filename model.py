@@ -872,8 +872,35 @@ def sample_action_sequences(n_sequences, horizon, n_actions):
     """
     return torch.randint(0, n_actions, (n_sequences, horizon))
 
-# Step 33 - score_action_sequences (not yet solved)
-# TODO: implement
+# Step 33 - score_action_sequences
+import torch
+
+def score_action_sequences(start_embedding, action_sequences, goal_embedding, predictor_params):
+    """
+    Score candidate action sequences for random-shooting MPC by cumulative
+    latent distance to a goal, entirely in embedding space.
+
+    Args:
+        start_embedding: (D,) shared starting embedding
+        action_sequences: (N, H) candidate discrete action plans
+        goal_embedding: (D,) goal embedding
+        predictor_params: predictor parameter dict
+
+    Returns:
+        (N,) tensor of total cost per candidate sequence.
+    """
+    N = action_sequences.shape[0]
+
+    start_batch = start_embedding.unsqueeze(0).expand(N, -1)  # (N, D)
+
+    with torch.no_grad():
+        trajectory = rollout_latent_dynamics(start_batch, action_sequences, predictor_params)  # (H+1, N, D)
+        predicted = trajectory[1:]  # (H, N, D)
+
+        step_costs = latent_cost(predicted, goal_embedding)  # (H, N)
+        total_costs = step_costs.sum(dim=0)  # (N,)
+
+    return total_costs
 
 # Step 34 - select_best_plan (not yet solved)
 # TODO: implement
