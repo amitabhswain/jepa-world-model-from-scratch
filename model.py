@@ -573,8 +573,47 @@ def jepa_training_step(batch: dict, encoder_params: dict, target_params: dict, p
 
     return updated_encoder_params, updated_target_params, updated_predictor_params, loss_value, collapse_value
 
-# Step 24 - train_jepa (not yet solved)
-# TODO: implement
+# Step 24 - train_jepa
+import torch
+
+def train_jepa(dataset: dict, encoder_params: dict, target_params: dict, predictor_params: dict, num_steps: int = 50, batch_size: int = 32, lr: float = 1e-3, tau: float = 0.99, seed: int = 0) -> tuple[dict, dict, dict, list]:
+    """
+    Train the JEPA world model for num_steps gradient updates.
+
+    Args:
+        dataset: dict with 'observations' (N,C,H,W), 'actions' (N,), 'next_observations' (N,C,H,W)
+        encoder_params, target_params, predictor_params: initial parameter dicts
+        num_steps: number of gradient updates
+        batch_size: mini-batch size (sampled with replacement)
+        lr: SGD learning rate
+        tau: EMA decay for the target encoder
+        seed: RNG seed for reproducible batch sampling
+
+    Returns:
+        (encoder_params, target_params, predictor_params, history), where history
+        is a list of {'loss': float, 'collapse': float} dicts, one per step.
+    """
+    torch.manual_seed(seed)
+
+    N = dataset['observations'].shape[0]
+    history = []
+
+    for _ in range(num_steps):
+        idx = torch.randint(0, N, (batch_size,))
+
+        batch = {
+            'observations': dataset['observations'][idx],
+            'actions': dataset['actions'][idx],
+            'next_observations': dataset['next_observations'][idx],
+        }
+
+        encoder_params, target_params, predictor_params, loss_value, collapse_value = jepa_training_step(
+            batch, encoder_params, target_params, predictor_params, lr=lr, tau=tau
+        )
+
+        history.append({'loss': loss_value, 'collapse': collapse_value})
+
+    return encoder_params, target_params, predictor_params, history
 
 # Step 25 - rollout_latent_dynamics (not yet solved)
 # TODO: implement
