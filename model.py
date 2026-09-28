@@ -55,8 +55,29 @@ def apply_action(state: torch.Tensor, action: int, room_size: int = 8) -> torch.
 
     return torch.clamp(new_state, min=0, max=room_size - 1)
 
-# Step 3 - render_observation (not yet solved)
-# TODO: implement
+# Step 3 - render_observation
+import torch
+
+def render_observation(state: torch.Tensor, room_size: int = 8) -> torch.Tensor:
+    """
+    Render an agent state as a single-channel pixel observation.
+
+    Args:
+        state: (2,) float tensor of (x, y), x = column, y = row
+        room_size: side length of the square room
+
+    Returns:
+        (1, room_size, room_size) float32 tensor, 0.0 background,
+        1.0 at the agent pixel [0, y, x].
+    """
+    obs = torch.zeros(1, room_size, room_size, dtype=torch.float32)
+
+    x = int(state[0].item())
+    y = int(state[1].item())
+
+    obs[0, y, x] = 1.0
+
+    return obs
 
 # Step 4 - env_reset (not yet solved)
 # TODO: implement
