@@ -749,7 +749,7 @@ def train_linear_probe(embeddings: torch.Tensor, states: torch.Tensor, probe_par
     Args:
         embeddings: (N, latent_dim) frozen embeddings (not trained)
         states: (N, state_dim) true agent states
-        probe_params: dict with 'w' (latent_dim, state_dim), 'b' (state_dim,)
+        probe_params: dict with 'w' (state_dim, latent_dim), 'b' (state_dim,)
         num_steps: number of gradient descent steps
         lr: learning rate
 
@@ -757,13 +757,13 @@ def train_linear_probe(embeddings: torch.Tensor, states: torch.Tensor, probe_par
         dict with updated 'w' and 'b', detached leaf tensors.
     """
     embeddings = embeddings.detach()
-    states = states.detach()
+    states = states.detach().float()
 
     w = probe_params['w'].clone().detach().requires_grad_(True)
     b = probe_params['b'].clone().detach().requires_grad_(True)
 
     for _ in range(num_steps):
-        pred = embeddings @ w + b
+        pred = embeddings @ w.T + b
         loss = torch.mean((pred - states) ** 2)
 
         loss.backward()
@@ -777,8 +777,40 @@ def train_linear_probe(embeddings: torch.Tensor, states: torch.Tensor, probe_par
 
     return {'w': w.detach().clone(), 'b': b.detach().clone()}
 
-# Step 29 - probe_state_recovery (not yet solved)
-# TODO: implement
+# Step 29 - probe_state_recovery
+import torch
+
+def probe_state_recovery(dataset: dict, encoder_params: dict, probe_params: dict | None = None, num_probe_steps: int = 100) -> dict:
+    """
+    Evaluate how well JEPA latents recover true agent state via a linear probe.
+    """
+    observations = dataset['observations']
+    states = dataset['states'].float()
+
+    with torch.no_grad():
+        embeddings = encode_batch(observations, encoder_params)
+
+    D = embeddings.shape[-1]
+    state_dim = states.shape[-1]
+
+    if probe_params is None:
+        probe_params = init_linear_probe(latent_dim=D, state_dim=state_dim, seed=0)
+
+    trained_probe = train_linear_probe(embeddings, states, probe_params, num_steps=num_probe_steps)
+
+    w = trained_probe['w']
+    b = trained_probe['b']
+
+    with torch.no_grad():
+        pred = embeddings @ w.T + b
+        mse = torch.mean((pred - states) ** 2)
+        mean_abs_error = torch.mean(torch.abs(pred - states))
+
+    return {
+        'mse': mse.item(),
+        'mean_abs_error': mean_abs_error.item(),
+        'probe_params': trained_probe,
+    }
 
 # Step 30 - encode_goal (not yet solved)
 # TODO: implement
