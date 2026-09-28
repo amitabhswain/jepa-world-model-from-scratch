@@ -243,8 +243,21 @@ def encoder_forward(obs: torch.Tensor, encoder_params: dict) -> torch.Tensor:
 
     return F.linear(x, encoder_params['fc_w'], encoder_params['fc_b'])
 
-# Step 10 - init_target_encoder (not yet solved)
-# TODO: implement
+# Step 10 - init_target_encoder
+import torch
+
+def init_target_encoder(encoder_params: dict) -> dict:
+    """
+    Create the EMA target encoder as a detached deep copy of the online encoder.
+
+    Args:
+        encoder_params: dict with conv1_w, conv1_b, conv2_w, conv2_b, fc_w, fc_b
+
+    Returns:
+        New dict with the same keys. Each value is an independent clone
+        (own storage) with requires_grad=False.
+    """
+    return {k: v.detach().clone() for k, v in encoder_params.items()}
 
 # Step 11 - ema_update (not yet solved)
 # TODO: implement
