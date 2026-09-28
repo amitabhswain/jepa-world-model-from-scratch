@@ -1049,6 +1049,55 @@ def evaluate_planner(encoder_params, predictor_params, room_size, agent_size, n_
         'mean_final_distance': total_distance / n_episodes,
     }
 
-# Step 38 - jepa_world_model_experiment (not yet solved)
-# TODO: implement
+# Step 38 - jepa_world_model_experiment
+import torch
+
+def jepa_world_model_experiment(room_size, agent_size, embed_dim, n_train_transitions, n_epochs, batch_size, n_probe_samples, n_eval_episodes, max_steps, n_sequences, horizon):
+    """
+    Run the full end-to-end JEPA world-model experiment.
+
+    Returns:
+        dict with 'train_losses', 'collapse_metrics', 'probe_r2', 'success_rate', 'mean_steps'.
+    """
+    # 1. Data collection.
+    dataset = build_transition_dataset(n_train_transitions, room_size=room_size, seed=0)
+
+    # 2. Initialize online encoder, EMA target, and predictor.
+    encoder_params = init_encoder_params(room_size=room_size, latent_dim=embed_dim, seed=0)
+    target_params = init_target_encoder(encoder_params)
+    predictor_params = init_predictor_params(latent_dim=embed_dim, action_dim=4, hidden_dim=64, seed=0)
+
+    # 3. Train JEPA.
+    encoder_params, target_params, predictor_params, history = train_jepa(
+        dataset, encoder_params, target_params, predictor_params,
+        num_steps=n_epochs, batch_size=batch_size, lr=1e-3, tau=0.99, seed=0
+    )
+
+    train_losses = [float(h['loss']) for h in history]
+    collapse_metrics = [float(h['collapse']) for h in history]
+
+    # 4. Linear probe on the first n_probe_samples transitions.
+    probe_dataset = {
+        'observations': dataset['observations'][:n_probe_samples],
+        'states': dataset['states'][:n_probe_samples],
+    }
+    probe_result = probe_state_recovery(probe_dataset, encoder_params, probe_params=None, num_probe_steps=100)
+
+    states = probe_dataset['states'].float()
+    state_var = torch.mean((states - states.mean(dim=0, keepdim=True)) ** 2)
+    probe_r2 = float(1.0 - probe_result['mse'] / (state_var.item() + 1e-8))
+
+    # 5. Planner evaluation.
+    eval_result = evaluate_planner(
+        encoder_params, predictor_params, room_size, agent_size,
+        n_eval_episodes, max_steps, n_sequences, horizon, n_actions=4
+    )
+
+    return {
+        'train_losses': train_losses,
+        'collapse_metrics': collapse_metrics,
+        'probe_r2': probe_r2,
+        'success_rate': float(eval_result['success_rate']),
+        'mean_steps': float(eval_result['mean_steps']),
+    }
 
