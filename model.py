@@ -919,8 +919,31 @@ def select_best_plan(action_sequences, costs):
     best_idx = torch.argmin(costs)
     return action_sequences[best_idx]
 
-# Step 35 - mpc_step (not yet solved)
-# TODO: implement
+# Step 35 - mpc_step
+import torch
+
+def mpc_step(start_embedding, goal_embedding, predictor_params, n_sequences, horizon, n_actions):
+    """
+    One random-shooting MPC step in latent space: sample candidate plans,
+    score them by distance to the goal, and return only the first action
+    of the best plan.
+
+    Args:
+        start_embedding: (D,) current latent embedding
+        goal_embedding: (D,) goal latent embedding
+        predictor_params: predictor parameter dict
+        n_sequences: number of candidate action plans to sample
+        horizon: length of each candidate plan
+        n_actions: number of discrete actions
+
+    Returns:
+        Python int: the first action of the lowest-cost plan.
+    """
+    action_sequences = sample_action_sequences(n_sequences, horizon, n_actions)
+    costs = score_action_sequences(start_embedding, action_sequences, goal_embedding, predictor_params)
+    best_plan = select_best_plan(action_sequences, costs)
+
+    return int(best_plan[0].item())
 
 # Step 36 - run_mpc_episode (not yet solved)
 # TODO: implement
