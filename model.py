@@ -615,8 +615,49 @@ def train_jepa(dataset: dict, encoder_params: dict, target_params: dict, predict
 
     return encoder_params, target_params, predictor_params, history
 
-# Step 25 - rollout_latent_dynamics (not yet solved)
-# TODO: implement
+# Step 25 - rollout_latent_dynamics
+import torch
+
+def rollout_latent_dynamics(initial_embedding: torch.Tensor, actions: torch.Tensor, predictor_params: dict) -> torch.Tensor:
+    """
+    Roll out multi-step latent dynamics via the action-conditioned predictor.
+
+    Args:
+        initial_embedding: (D,) or (B, D) starting embedding
+        actions: (T,) or (B, T) discrete action indices
+        predictor_params: predictor parameter dict
+
+    Returns:
+        (T+1, D) if unbatched, or (T+1, B, D) if batched.
+        Index 0 is the initial embedding; index t+1 is the predictor's output
+        after applying actions[..., t].
+    """
+    was_unbatched = initial_embedding.dim() == 1
+
+    if was_unbatched:
+        current = initial_embedding.unsqueeze(0)          # (1, D)
+    else:
+        current = initial_embedding                       # (B, D)
+
+    B = current.shape[0]
+
+    if actions.dim() == 1:
+        actions = actions.unsqueeze(0).expand(B, -1)       # (B, T)
+
+    T = actions.shape[1]
+
+    trajectory = [current]
+
+    for t in range(T):
+        current = predict_next_embedding(current, actions[:, t], predictor_params)
+        trajectory.append(current)
+
+    traj = torch.stack(trajectory, dim=0)  # (T+1, B, D)
+
+    if was_unbatched:
+        traj = traj.squeeze(1)  # (T+1, D)
+
+    return traj
 
 # Step 26 - multi_step_prediction_error (not yet solved)
 # TODO: implement
