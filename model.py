@@ -79,8 +79,24 @@ def render_observation(state: torch.Tensor, room_size: int = 8) -> torch.Tensor:
 
     return obs
 
-# Step 4 - env_reset (not yet solved)
-# TODO: implement
+# Step 4 - env_reset
+import torch
+
+def env_reset(room_size: int = 8, seed: int | None = None) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    Reset the 2D room environment.
+
+    Args:
+        room_size: side length of the square room
+        seed: optional seed for reproducible initialization
+
+    Returns:
+        (state, observation): state is a (2,) float32 tensor of (x, y),
+        observation is a (1, room_size, room_size) float32 image.
+    """
+    state = init_env_state(room_size=room_size, seed=seed)
+    obs = render_observation(state, room_size=room_size)
+    return state, obs
 
 # Step 5 - env_step (not yet solved)
 # TODO: implement
