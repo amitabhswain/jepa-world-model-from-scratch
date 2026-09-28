@@ -816,8 +816,28 @@ def probe_state_recovery(dataset: dict, encoder_params: dict, probe_params: dict
         'probe_params': trained_probe,
     }
 
-# Step 30 - encode_goal (not yet solved)
-# TODO: implement
+# Step 30 - encode_goal
+import torch
+
+def encode_goal(goal_state: torch.Tensor, encoder_params: dict, room_size: int = 8) -> torch.Tensor:
+    """
+    Convert a desired agent position into a latent goal embedding.
+
+    Args:
+        goal_state: (2,) tensor of (x, y) goal coordinates
+        encoder_params: encoder parameter dict
+        room_size: side length of the square room
+
+    Returns:
+        (latent_dim,) embedding of the goal position.
+    """
+    goal_obs = render_observation(goal_state, room_size=room_size)  # (1, H, W)
+    goal_obs = goal_obs.unsqueeze(0)                                 # (1, 1, H, W)
+
+    with torch.no_grad():
+        goal_embedding = encoder_forward(goal_obs, encoder_params)  # (1, latent_dim)
+
+    return goal_embedding.squeeze(0)  # (latent_dim,)
 
 # Step 31 - latent_cost (not yet solved)
 # TODO: implement
