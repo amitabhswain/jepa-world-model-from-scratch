@@ -98,8 +98,25 @@ def env_reset(room_size: int = 8, seed: int | None = None) -> tuple[torch.Tensor
     obs = render_observation(state, room_size=room_size)
     return state, obs
 
-# Step 5 - env_step (not yet solved)
-# TODO: implement
+# Step 5 - env_step
+import torch
+
+def env_step(state: torch.Tensor, action: int, room_size: int = 8) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    Advance the 2D room by one discrete action.
+
+    Args:
+        state: (2,) float tensor of (x, y)
+        action: 0=up, 1=down, 2=left, 3=right
+        room_size: side length of the square room
+
+    Returns:
+        (next_state, next_obs): next_state is (2,) float32,
+        next_obs is (1, room_size, room_size) float32.
+    """
+    next_state = apply_action(state, action, room_size=room_size)
+    next_obs = render_observation(next_state, room_size=room_size)
+    return next_state, next_obs
 
 # Step 6 - collect_random_transitions (not yet solved)
 # TODO: implement
