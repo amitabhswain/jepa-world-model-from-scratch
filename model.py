@@ -388,8 +388,21 @@ def predict_next_embedding(embeddings: torch.Tensor, actions: torch.Tensor, pred
     """
     return predictor_forward(embeddings, actions, predictor_params)
 
-# Step 17 - prediction_loss (not yet solved)
-# TODO: implement
+# Step 17 - prediction_loss
+import torch
+
+def prediction_loss(predicted: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    """
+    JEPA prediction loss: mean squared error between predicted and target embeddings.
+
+    Args:
+        predicted: (B, D) predicted next embeddings, from the online predictor
+        target: (B, D) target embeddings, from the (detached) target encoder
+
+    Returns:
+        0-d scalar tensor: mean of all squared element-wise differences.
+    """
+    return ((predicted - target) ** 2).mean()
 
 # Step 18 - variance_loss (not yet solved)
 # TODO: implement
