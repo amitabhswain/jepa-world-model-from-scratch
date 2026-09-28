@@ -510,8 +510,68 @@ def collapse_metric(embeddings: torch.Tensor) -> torch.Tensor:
     """
     return embeddings.std(dim=0).mean()
 
-# Step 23 - jepa_training_step (not yet solved)
-# TODO: implement
+# Step 23 - jepa_training_step
+import torch
+
+def jepa_training_step(batch: dict, encoder_params: dict, target_params: dict, predictor_params: dict, lr: float = 1e-3, tau: float = 0.99) -> tuple[dict, dict, dict, float, float]:
+    """
+    Perform one full JEPA gradient update on a batch of transitions.
+
+    Args:
+        batch: dict with 'observations' (B,C,H,W), 'actions' (B,), 'next_observations' (B,C,H,W)
+        encoder_params: online encoder param dict (trainable)
+        target_params: target encoder param dict (EMA teacher, not trained by SGD)
+        predictor_params: predictor param dict (trainable)
+        lr: SGD learning rate
+        tau: EMA decay for the target encoder update
+
+    Returns:
+        (updated_encoder_params, updated_target_params, updated_predictor_params,
+         loss_value, collapse_value), with the last two as Python floats.
+    """
+    obs = batch['observations']
+    actions = batch['actions']
+    next_obs = batch['next_observations']
+
+    # 1. Online embeddings carry gradients.
+    online = encode_batch(obs, encoder_params)
+
+    # 2. Target embeddings are stop-gradient.
+    with torch.no_grad():
+        target = encode_batch(next_obs, target_params)
+
+    # 3. Predict next embedding from current online latents + actions.
+    predicted = predict_next_embedding(online, actions, predictor_params)
+
+    # 4. JEPA objective: prediction MSE + VICReg on online embeddings.
+    loss = jepa_loss(predicted, target, online)
+
+    # Clear any stale gradients before backprop.
+    for p in list(encoder_params.values()) + list(predictor_params.values()):
+        p.grad = None
+
+    loss.backward()
+
+    def sgd_update(params: dict) -> dict:
+        new_params = {}
+        for k, p in params.items():
+            if p.grad is not None:
+                new_p = (p - lr * p.grad).detach().requires_grad_(True)
+            else:
+                new_p = p.detach().clone().requires_grad_(True)
+            new_params[k] = new_p
+        return new_params
+
+    updated_encoder_params = sgd_update(encoder_params)
+    updated_predictor_params = sgd_update(predictor_params)
+
+    # 5. EMA-update the target encoder toward the just-updated online encoder.
+    updated_target_params = ema_update(target_params, updated_encoder_params, tau=tau)
+
+    loss_value = loss.item()
+    collapse_value = collapse_metric(online.detach()).item()
+
+    return updated_encoder_params, updated_target_params, updated_predictor_params, loss_value, collapse_value
 
 # Step 24 - train_jepa (not yet solved)
 # TODO: implement
